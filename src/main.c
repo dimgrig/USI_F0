@@ -20,10 +20,8 @@
 #include "GUI.h"
 
 
-//#include "usbd_cdc_core.h"
-//#include "usbd_usr.h"
-//#include "t14-usb.h"
-//USB_CORE_HANDLE  USB_Device_dev ;
+#include "t14-usb.h"
+USB_CORE_HANDLE  USB_Device_dev ;
 
 #include "FT_Platform.h"
 #include "SampleApp.h"
@@ -74,11 +72,25 @@ void main(int argc, char* argv[])
 
 	__disable_irq();
 
+//	RCC_DeInit(); //reset all rcc settings
+//	RCC_HSEConfig(RCC_HSE_ON); //hse on
+//	RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE); //HSE like system clk source
+//	//RCC_HSICmd(ENABLE);  //HSI 8 MHz on
+//	RCC_PREDIV1Config(RCC_PREDIV1_Div2);
+//	RCC_PLLConfig(RCC_PLLSource_PREDIV1 ,RCC_PLLMul_12); //pll work with (hsi/2)*12=32MHz
+//	//RCC_PLLConfig(RCC_PLLSource_HSI_Div2,RCC_PLLMul_12);  //pll work with (hsi/2)*12=48MHz
+//	RCC_PLLCmd(ENABLE); // pll enable
+//	RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
+
 	/* Setup STM32 system (clock, PLL and Flash configuration) */
 	SystemInit();
 
+	uint8_t clk = RCC_GetSYSCLKSource();
+
 	TIMERS_init();
 
+
+	clk = 1;
 
 	SPI1_init();
 	GPIO_SPI_init();
@@ -89,7 +101,13 @@ void main(int argc, char* argv[])
 
 	InitSSI();
 
-//	USBD_Init(&USB_Device_dev, &USR_desc, &USBD_CDC_cb, &USR_cb);
+
+	/* rcc init end */
+	/* usb init start*/
+	//Set_System();
+
+//	RCC_Initializatiion();
+	USBD_Init(&USB_Device_dev, &USR_desc, &USBD_CDC_cb, &USR_cb);
 
 //**	RCC_Initializatiion();
 //**	SYSCFG_USBPuCmd( ENABLE );
@@ -111,7 +129,7 @@ void main(int argc, char* argv[])
 
 	Ft_Gpu_Hal_Sleep(100);
 
-	SAMAPP_BootupConfig(phost);
+//	SAMAPP_BootupConfig(phost);
 
 //	FLASH_Status FLASHStatus;
 //	ft_uint32_t storedMaterial = FLASH_Read_DataWord(0);
@@ -245,9 +263,10 @@ void main(int argc, char* argv[])
 //		  Ft_Gpu_Hal_Sleep(5);
 //	  }
 
-
-	  //** USB_Send_DataPair(STATE, F, A);
-	  //USB_Send_State(STATE);
+	if (USB_Device_dev.dev.device_status == USB_CONFIGURED) {
+	  USB_Send_DataPair(&USB_Device_dev, STATE, F, A);
+	  //USB_Send_State(&USB_Device_dev, STATE);
+	}
 
 	  if (flag != 0)
 	  	  init_finished++;

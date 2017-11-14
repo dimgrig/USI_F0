@@ -9,14 +9,14 @@ uint16_t SPI_SendRecvByte (unsigned char byte_s)
 
 	SPI_SendData(SPI1, byte_s); //SPI_I2S_SendData(SPI1, byte_s);
 
-	uint16_t i = 0;
-	while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET){
-//		i++;
-//		if (i > 1000) {
-//			break;
-//		}
-		;
-	}
+//	uint16_t i = 0;
+//	while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET){
+////		i++;
+////		if (i > 1000) {
+////			break;
+////		}
+//		;
+//	}
 //        for(int i = 0; i < 1000; )
 //        {
 //          i++;

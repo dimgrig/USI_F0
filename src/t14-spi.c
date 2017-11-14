@@ -29,10 +29,16 @@ void SPI1_init()
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b; //////////////!!!!!!!!
 	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;///////////////!!!!!!!!!!!!! SPI_BaudRatePrescaler_4
-	SPI_Init(SPI1, &SPI_InitStructure);
+	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+	SPI_InitStructure.SPI_CRCPolynomial = 7;
+    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;///////////////!!!!!!!!!!!!! SPI_BaudRatePrescaler_4
 
-	//SPI_RxFIFOThresholdConfig (SPI1, SPI_RxFIFOThreshold_QF);
+    SPI_Init(SPI1, &SPI_InitStructure);
+
+	SPI_RxFIFOThresholdConfig (SPI1, SPI_RxFIFOThreshold_QF);
+	SPI_SSOutputCmd(SPI1, DISABLE); // Disable SPI1 NSS output for master mode
 
 	SPI_Cmd(SPI1, ENABLE);
 }

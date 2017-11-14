@@ -14,23 +14,59 @@
 // ******************************
 void RCC_Initializatiion(void)
 {
-	/* Start HSI and connect SysClk to HSI. HSI = 16 MHz */
-	RCC_HSICmd(ENABLE);
+	/* Start HSI and connect SysClk to HSI. HSI = 8 MHz */ //16
+	RCC_DeInit(); //reset all rcc settings
+	//RCC_HSICmd(ENABLE);
 	while (RCC_GetFlagStatus(RCC_FLAG_HSIRDY) == RESET);
-	RCC_SYSCLKConfig(RCC_SYSCLKSource_HSI);
-	while (RCC_GetSYSCLKSource() != 0x04);
+	RCC_HSEConfig(RCC_HSE_ON); //hse on
+	ErrorStatus HSEStartUpStatus = RCC_WaitForHSEStartUp();
+	RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE); //HSE like system clk source
+
+	//RCC_SYSCLKConfig(RCC_SYSCLKSource_HSI);
+//	while (RCC_GetSYSCLKSource() != 0x04);
 	/* PLL Config */
 	//** RCC_PLLConfig(RCC_PLLSource_HSI, RCC_PLLMul_6, RCC_PLLDiv_4);
-	RCC_PLLConfig(RCC_PLLSource_HSI, RCC_PLLMul_2);
+//	RCC_PLLConfig(RCC_PLLSource_HSI, RCC_PLLMul_6);
 
-	RCC_PLLCmd(ENABLE);
-	while (RCC_GetFlagStatus( RCC_FLAG_PLLRDY ) == RESET);
-	/* Enable Clock to GPIO A (USB is connected here)*/
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE) ;
-	/* USB clock enable */
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USB, ENABLE);
-	/* Enable clock to SYSCFG */
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+	if (HSEStartUpStatus == 1)
+	    {
+	        /* HCLK = SYSCLK */
+	        RCC_HCLKConfig(RCC_SYSCLK_Div1);
+
+//	        /* PCLK2 = HCLK*/
+//	        RCC_PCLK2Config(RCC_HCLK_Div1);
+//
+//	        /* PCLK1 = HCLK*/
+//	        RCC_PCLK1Config(RCC_HCLK_Div1);
+
+
+	        /* PLLCLK = 8MHz * 6 = 48 MHz */
+	        RCC_PLLConfig(RCC_PLLSource_PREDIV1, RCC_PLLMul_6);
+
+
+
+	        /* Enable PLL */
+	        RCC_PLLCmd(ENABLE);
+
+	        /* Wait till PLL is ready */
+	        while (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET) {}
+
+	        /* Select PLL as system clock source */
+	        RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
+
+	        /* Wait till PLL is used as system clock source */
+	        while (RCC_GetSYSCLKSource() != 0x08) {}
+	    }
+
+
+//	RCC_PLLCmd(ENABLE);
+//	while (RCC_GetFlagStatus( RCC_FLAG_PLLRDY ) == RESET);
+//	/* Enable Clock to GPIO A (USB is connected here)*/
+//	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE) ;
+//	/* USB clock enable */
+//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USB, ENABLE);
+//	/* Enable clock to SYSCFG */
+//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 }
 
 /* #### USB Low  Priority ISR ###### */
@@ -40,9 +76,9 @@ void USB_LP_IRQHandler (void)
 }
 
 
-void USB_Send_Packet(uint8_t *packet, uint16_t length)
+void USB_Send_Packet(USB_CORE_HANDLE *pdev, uint8_t *packet, uint16_t length)
 {
-	USB_Send_Data(0x02);
+	USB_Send_Data(pdev, 0x02);
 	//USB_Send_Data(0x11);
 	//USB_Send_Data(0x15);
 	uint8_t CRC_ = 0;
@@ -52,22 +88,22 @@ void USB_Send_Packet(uint8_t *packet, uint16_t length)
 		TempChar = *packet++;
 		//TempChar = test_pack[i];
 		CRC_ += TempChar;
-		USB_Send_Data(TempChar);
+		USB_Send_Data(pdev, TempChar);
 
 	}
-	USB_Send_Data( hextoascii((CRC_ >> 4)&0x0F) );
-	USB_Send_Data( hextoascii((CRC_ >> 0)&0x0F) );
+	USB_Send_Data(pdev, hextoascii((CRC_ >> 4)&0x0F) );
+	USB_Send_Data(pdev, hextoascii((CRC_ >> 0)&0x0F) );
 
-	USB_Send_Data(0x03);
-	USB_Send_Data(0x0A);
+	USB_Send_Data(pdev, 0x03);
+	USB_Send_Data(pdev, 0x0A);
 }
 
-void USB_Send_State(State_TypeDef STATE){
+void USB_Send_State(USB_CORE_HANDLE *pdev, State_TypeDef STATE){
 	uint8_t arr[1] = {(uint8_t)STATE};
-	USB_Send_Packet(arr, 1);
+	USB_Send_Packet(pdev, arr, 1);
 }
 
-void USB_Send_DataPair(State_TypeDef STATE, double F, double A){
+void USB_Send_DataPair(USB_CORE_HANDLE *pdev, State_TypeDef STATE, double F, double A){
 	uint8_t length = 0;
 	uint8_t l = 0;
 	uint8_t arr[50];
@@ -187,7 +223,7 @@ void USB_Send_DataPair(State_TypeDef STATE, double F, double A){
 
 	//sprintf(value_c, "%d.%d", (int)A, (int)( ( A - floor(A) ) * pow(10, 3) ));
 
-	USB_Send_Packet(arr, length);
+	USB_Send_Packet(pdev, arr, length);
 }
 
 uint8_t hextoascii(uint8_t hex)
@@ -239,6 +275,11 @@ uint8_t asciitohex(uint8_t ascii)
 			case 0x46: hex = 15; break;
          }
   return (hex);
+}
+
+
+void USB_Send_Data(USB_CORE_HANDLE *pdev, uint8_t data){
+	USBD_CtlSendData(pdev, data, 1);
 }
 
 /* if any data received from PC */
