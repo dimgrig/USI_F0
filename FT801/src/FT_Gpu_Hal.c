@@ -357,11 +357,11 @@ ft_void_t Ft_Gpu_HostCommand(Ft_Gpu_Hal_Context_t *host,ft_uint8_t cmd)
 
 	//while( ! (SPIM_bReadStatus() & SPIM_SPIM_TX_BUFFER_EMPTY ) );
 	//SPIM_SendTxData(0);
-	SPI_SendRecvByte(0);
+	SPI_SendRecvByte(0x00);
 
 	//while( ! (SPIM_bReadStatus() & SPIM_SPIM_TX_BUFFER_EMPTY ) );
 	//SPIM_SendTxData(0);
-	SPI_SendRecvByte(0);
+	SPI_SendRecvByte(0x00);
 
 	SPI_LCD_CS_HIGH();
 

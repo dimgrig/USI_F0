@@ -6,24 +6,25 @@ void SPI1_init()
 {
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+	//RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
 
 	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_StructInit(&GPIO_InitStructure);
+	//GPIO_StructInit(&GPIO_InitStructure);
+
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_1);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_1);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_1);
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_0);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_0);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_0);
-
-	SPI_I2S_DeInit(SPI1);
+	//SPI_I2S_DeInit(SPI1);
 	SPI_InitTypeDef SPI_InitStructure;
-	SPI_StructInit(&SPI_InitStructure);
+	//SPI_StructInit(&SPI_InitStructure);
 
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
@@ -35,12 +36,18 @@ void SPI1_init()
 	SPI_InitStructure.SPI_CRCPolynomial = 7;
     SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;///////////////!!!!!!!!!!!!! SPI_BaudRatePrescaler_4
 
+    SPI_SSOutputCmd(SPI1, ENABLE);
     SPI_Init(SPI1, &SPI_InitStructure);
 
+    SPI_CalculateCRC(SPI1, DISABLE);
+
 	SPI_RxFIFOThresholdConfig (SPI1, SPI_RxFIFOThreshold_QF);
-	SPI_SSOutputCmd(SPI1, DISABLE); // Disable SPI1 NSS output for master mode
+	//SPI_SSOutputCmd(SPI1, DISABLE); // Disable SPI1 NSS output for master mode
+
 
 	SPI_Cmd(SPI1, ENABLE);
+
+	SPI_NSSInternalSoftwareConfig(SPI1, SPI_NSSInternalSoft_Set);
 }
 
 uint16_t SPI_receive(SPI_TypeDef* SPIx)
@@ -52,6 +59,7 @@ uint16_t SPI_receive(SPI_TypeDef* SPIx)
           
 void GPIO_SPI_init()
 {
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
   GPIO_InitTypeDef  CS_init;  // создаем структуру
 
   CS_init.GPIO_Mode = GPIO_Mode_OUT;  // направление - выход
@@ -66,24 +74,24 @@ void GPIO_SPI_init()
 
   PD_init.GPIO_Mode = GPIO_Mode_OUT;  // направление - выход
   PD_init.GPIO_OType = GPIO_OType_PP;  // Двухтактный выход
-  PD_init.GPIO_PuPd = GPIO_PuPd_NOPULL;  // Без подтяжки
+  PD_init.GPIO_PuPd = GPIO_PuPd_UP;  // Без подтяжки
   PD_init.GPIO_Speed = GPIO_Speed_Level_3;  // Скорость низкая
   PD_init.GPIO_Pin = GPIO_Pin_8; // Светодиод на 15м выводе
 
   GPIO_Init(GPIOB, &PD_init);  // Функция, выполняющая настройку портов
  
   
-  GPIO_InitTypeDef TP_IRQ_init;
+//  GPIO_InitTypeDef TP_IRQ_init;
 //  EXTI_InitTypeDef exti;
 //  NVIC_InitTypeDef nvic;
   
-  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-  //RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
- 
-  TP_IRQ_init.GPIO_Mode = GPIO_Mode_IN;
-  TP_IRQ_init.GPIO_Pin = GPIO_Pin_7;
-  TP_IRQ_init.GPIO_Speed = GPIO_Speed_Level_3;
-  GPIO_Init(GPIOB, &TP_IRQ_init);
+//  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+//  //RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+//
+//  TP_IRQ_init.GPIO_Mode = GPIO_Mode_IN;
+//  TP_IRQ_init.GPIO_Pin = GPIO_Pin_7;
+//  TP_IRQ_init.GPIO_Speed = GPIO_Speed_Level_3;
+//  GPIO_Init(GPIOB, &TP_IRQ_init);
   
  
 //  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource0);

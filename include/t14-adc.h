@@ -9,5 +9,6 @@
 //#define ADC_ExternalTrigConv_None   ((uint32_t)0x000E0000)
 
 void ADC_init();
-float get_adc_value();
+void ADC_init2();
+//float get_adc_value();
 

@@ -23,9 +23,9 @@ void TIMERS_init(void)
   RCC_APB1PeriphResetCmd(RCC_APB1Periph_TIM2,DISABLE);
 
   // Set timer period
-  TIM_TimeBaseInitStruct.TIM_Prescaler = (SystemCoreClock / 1000) - 1; // 480   ---320;  // 10us resolution
+  TIM_TimeBaseInitStruct.TIM_Prescaler = 320; //(SystemCoreClock / 1000) - 1; // 320;  // 10us resolution
   TIM_TimeBaseInitStruct.TIM_CounterMode = TIM_CounterMode_Up;
-  TIM_TimeBaseInitStruct.TIM_Period = 1000 - 1;  // 100 ms
+  TIM_TimeBaseInitStruct.TIM_Period = 10000;  // --100 ms
   TIM_TimeBaseInitStruct.TIM_ClockDivision = TIM_CKD_DIV1;
   TIM_TimeBaseInit(TIM2,&TIM_TimeBaseInitStruct);
 
@@ -36,7 +36,7 @@ void TIMERS_init(void)
 
   NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
 
-  NVIC_InitStructure.NVIC_IRQChannelPriority = 3;
+  NVIC_InitStructure.NVIC_IRQChannelPriority = 1;
 //  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 7;
 //  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
