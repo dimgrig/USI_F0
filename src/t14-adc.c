@@ -99,7 +99,11 @@ void ADC_init()
 
 
 	/* ADCx Regular Channel Configuration */
+<<<<<<< HEAD
 	ADC_ChannelConfig(ADC1, ADC_Channel_8, ADC_SampleTime_239_5Cycles);
+=======
+	ADC_ChannelConfig(ADC1, ADC_Channel_8, ADC_SampleTime_1_5Cycles);
+>>>>>>> 57d0eec03c0b4030ff015c4c701a728f7fb226e8
 
 
 
