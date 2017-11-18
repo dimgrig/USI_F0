@@ -17,7 +17,7 @@ void InitSSI(void)
 
   DATA_SSI_init.GPIO_Mode = GPIO_Mode_IN;  // направление - выход
   DATA_SSI_init.GPIO_Speed = GPIO_Speed_Level_3;
-  DATA_SSI_init.GPIO_PuPd = GPIO_PuPd_DOWN;  // 
+  DATA_SSI_init.GPIO_PuPd = GPIO_PuPd_UP;  //
   DATA_SSI_init.GPIO_Pin = GPIO_Pin_1;
 
   GPIO_Init(GPIOB, &DATA_SSI_init);  // ‘ункци€, выполн€юща€ настройку портов

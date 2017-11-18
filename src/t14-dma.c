@@ -6,7 +6,7 @@
  */
 
 #include "t14-dma.h"
-#include "stm32f0xx_dma.h"
+//#include "stm32f0xx_dma.h"
 
 
 
@@ -61,7 +61,7 @@ void DMA_init(void)
 	//RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 
 	//==Configure DMA1 - Channel1==
-	DMA_DeInit(DMA1_Channel1); //Set DMA registers to default values
+	//DMA_DeInit(DMA1_Channel1); //Set DMA registers to default values
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &ADC1->DR; //Address of peripheral the DMA must map to
 	DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) & DMA_BUFFER[0]; //Variable to which ADC values will be stored
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
@@ -80,7 +80,7 @@ void DMA_init(void)
 	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel1_IRQn ;
 	//NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 6;
 	//NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelPriority = 2;
+	NVIC_InitStructure.NVIC_IRQChannelPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 

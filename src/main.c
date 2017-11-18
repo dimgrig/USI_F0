@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#include "stm32f0xx.h"
 //#include "diag/Trace.h"
 
 //#include "Timer.h"
@@ -12,23 +14,20 @@
 #include "t14-math.h"
 
 #include "t14-timer.h"
-
 #include "t14-adc.h"
 #include "t14-dma.h"
 #include "t14-ssi.h"
-#include "t14-flash.h"
+//#include "t14-flash.h"
 #include "GUI.h"
 
 
 #include "t14-usb.h"
-USB_CORE_HANDLE  USB_Device_dev ;
+
 
 #include "FT_Platform.h"
 #include "SampleApp.h"
 
-//#define TP_TEST_DRAW
-
-#define SPS 5000UL
+#define SPS 5000stm23f0 ram
 #define Trc 0.001f
 #define K (SPS*Trc)
 
@@ -41,11 +40,13 @@ Screen_TypeDef SCREEN = MAIN;
 ft_uint16_t dloffset;
 
 State_TypeDef STATE = IDLE;
-uint16_t TouchDelay = 0;
+//uint16_t TouchDelay = 0;
+
+//USB_CORE_HANDLE  USB_Device_dev ;
 
 double F = 0; //текущие
 double A = 0;
-double E, HB, ST, SB;
+double E, HB, ST, SB = 0;
 
 double F1 = 0; //измерение
 double A0 = 0; //касание
@@ -55,8 +56,9 @@ double H = 0; //снятие
 // ----- Timing definitions -------------------------------------------------
 
 // Keep the LED on for 2/3 of a second.
-#define BLINK_ON_TICKS  (TIMER_FREQUENCY_HZ * 3 / 4)
-#define BLINK_OFF_TICKS (TIMER_FREQUENCY_HZ - BLINK_ON_TICKS)
+//#define BLINK_ON_TICKS  (TIMER_FREQUENCY_HZ * 3 / 4)
+//#define BLINK_OFF_TICKS (TIMER_FREQUENCY_HZ - BLINK_ON_TICKS)
+
 
 // ----- main() ---------------------------------------------------------------
 
@@ -72,42 +74,40 @@ void main(int argc, char* argv[])
 
 	__disable_irq();
 
-//	RCC_DeInit(); //reset all rcc settings
-//	RCC_HSEConfig(RCC_HSE_ON); //hse on
-//	RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE); //HSE like system clk source
-//	//RCC_HSICmd(ENABLE);  //HSI 8 MHz on
-//	RCC_PREDIV1Config(RCC_PREDIV1_Div2);
-//	RCC_PLLConfig(RCC_PLLSource_PREDIV1 ,RCC_PLLMul_12); //pll work with (hsi/2)*12=32MHz
-//	//RCC_PLLConfig(RCC_PLLSource_HSI_Div2,RCC_PLLMul_12);  //pll work with (hsi/2)*12=48MHz
-//	RCC_PLLCmd(ENABLE); // pll enable
-//	RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
-
 	/* Setup STM32 system (clock, PLL and Flash configuration) */
-	SystemInit();
+	//SystemInit(); // уже вызывается при startup
 
-	uint8_t clk = RCC_GetSYSCLKSource();
+	GPIO_InitTypeDef  GPIO_InitStructure;  // создаем структуру
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 
-	TIMERS_init();
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;  // Двухтактный выход
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;  // Без подтяжки
+	GPIO_Init(GPIOA, &GPIO_InitStructure);			// Конфигурируем вывод MCO
+
+	RCC_MCOConfig(RCC_MCOSource_HSI48, RCC_MCOPrescaler_1);			// Подаем на MCO сигнал с PLL/2
 
 
-	clk = 1;
+
+ 	TIMERS_init();
 
 	SPI1_init();
 	GPIO_SPI_init();
 	SPI_LCD_CS_HIGH();
 
-	DMA_init();
+//	DMA_init();
 	ADC_init();
 
 	InitSSI();
-
 
 	/* rcc init end */
 	/* usb init start*/
 	//Set_System();
 
 //	RCC_Initializatiion();
-	USBD_Init(&USB_Device_dev, &USR_desc, &USBD_CDC_cb, &USR_cb);
+//	USBD_Init(&USB_Device_dev, &USR_desc, &USBD_CDC_cb, &USR_cb);
 
 //**	RCC_Initializatiion();
 //**	SYSCFG_USBPuCmd( ENABLE );
@@ -129,7 +129,7 @@ void main(int argc, char* argv[])
 
 	Ft_Gpu_Hal_Sleep(100);
 
-//	SAMAPP_BootupConfig(phost);
+	SAMAPP_BootupConfig(phost);
 
 //	FLASH_Status FLASHStatus;
 //	ft_uint32_t storedMaterial = FLASH_Read_DataWord(0);
@@ -139,11 +139,11 @@ void main(int argc, char* argv[])
 //	  FLASHStatus = FLASH_Write_DataWord(0, 201);
 //	}
 
-	//*	dloffset = API_Screen_BasicScreen(phost, SCREEN);
+	dloffset = API_Screen_BasicScreen(phost, SCREEN);
 
 	Ft_Gpu_Hal_Sleep(50);
 
-	int flag = 1;
+	uint16_t flag = 1;
 	uint8_t i;
 	init_finished = 1;
 	__enable_irq();
@@ -153,125 +153,123 @@ void main(int argc, char* argv[])
 	// Infinite loop
 	while (1)
 	{
-//	  int tag = Ft_Gpu_Hal_Rd8(phost,REG_TOUCH_TAG);
+	  int tag = Ft_Gpu_Hal_Rd8(phost,REG_TOUCH_TAG);
 
-//	  if (tag != 0){
-//
-//		  SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
-//		  Ft_Gpu_Hal_Sleep(5);
-//
-//		  switch (tag){
-//			case 1:
-//				switch (SCREEN){
-//					case MAIN:
-//						SCREEN = SETTINGS;
-//						dloffset = API_Screen_BasicScreen(phost, SCREEN);
-//					break;
-//					case SETTINGS:
-//						SCREEN = MAIN;
-//						dloffset = API_Screen_BasicScreen(phost, SCREEN);
-//					break;
-//					case MATERIAL:
-//						SCREEN = SETTINGS;
-//						dloffset = API_Screen_BasicScreen(phost, SCREEN);
-//					break;
-//					case CALIBRATION:
-//						SCREEN = SETTINGS;
-//						dloffset = API_Screen_BasicScreen(phost, SCREEN);
-//					break;
-//				}
-//			break;
-//			case 2:
-//				switch (STATE)
-//			  {
-//				case IDLE:
-//				  STATE = TOUCH;
-//				break;
-//				case TOUCH:
-//				  A0 = A;
-//				  STATE = MEASURE;
-//				break;
-//				case MEASURE:
-//				  F1 = F;//измерение
-//				  A1 = A;
-//				  STATE = REMOVAL;
-//				break;
-//				case REMOVAL:
-//				  H = A;
-//
-//				  T14math(&E, &ST, &SB, &HB, F1, A0, A1, H);
-//				  STATE = RESULTS;
-//				break;
-//				case RESULTS:
-//					//clear
-//				  STATE = TOUCH;
-//				break;
-//			  }
-//
-//				SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
-//				Ft_Gpu_Hal_Sleep(5);
-//				flag = 1;
-//			break;
-//			case 3:
-//				STATE = IDLE;
-//				SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
-//				flag = 0;
-//			break;
-//			case 4:
-//				switch (SCREEN){
-//					case MAIN:
-//					break;
-//					case SETTINGS:
-//						SCREEN = MATERIAL;
-//						dloffset = API_Screen_BasicScreen(phost, SCREEN);
-//					break;
-//					case MATERIAL:
-//					break;
-//					case CALIBRATION:
-//					break;
-//				}
-//			break;
-//			case 5:
-//				switch (SCREEN){
-//					case MAIN:
-//					break;
-//					case SETTINGS:
-//						SCREEN = CALIBRATION;
-//						dloffset = API_Screen_BasicScreen(phost, SCREEN);
-//					break;
-//					case MATERIAL:
-//					break;
-//					case CALIBRATION:
-//					break;
-//				}
-//			break;
-//			case 201:
-//			case 202:
-//			case 203:
-//				//** FLASHStatus = FLASH_Write_DataWord(0, tag);
-//				//ft_uint32_t storedValue = FLASH_Read_DataWord(0);
-//			break;
-//		  }
-//
-//		  while (tag != 0){
-//			  tag = Ft_Gpu_Hal_Rd8(phost,REG_TOUCH_TAG);
-//		  }
-//
-//	  } else {
-//		  SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
-//		  tag = Ft_Gpu_Hal_Rd8(phost,REG_TOUCH_TAG);
-//		  Ft_Gpu_Hal_Sleep(5);
-//	  }
+	  if (tag != 0){
 
-	if (USB_Device_dev.dev.device_status == USB_CONFIGURED) {
-	  USB_Send_DataPair(&USB_Device_dev, STATE, F, A);
-	  //USB_Send_State(&USB_Device_dev, STATE);
-	}
+		  SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
+		  Ft_Gpu_Hal_Sleep(5);
+
+		  switch (tag){
+			case 1:
+				switch (SCREEN){
+					case MAIN:
+						SCREEN = SETTINGS;
+						dloffset = API_Screen_BasicScreen(phost, SCREEN);
+					break;
+					case SETTINGS:
+						SCREEN = MAIN;
+						dloffset = API_Screen_BasicScreen(phost, SCREEN);
+					break;
+					case MATERIAL:
+						SCREEN = SETTINGS;
+						dloffset = API_Screen_BasicScreen(phost, SCREEN);
+					break;
+					case CALIBRATION:
+						SCREEN = SETTINGS;
+						dloffset = API_Screen_BasicScreen(phost, SCREEN);
+					break;
+				}
+			break;
+			case 2:
+				switch (STATE)
+			  {
+				case IDLE:
+				  STATE = TOUCH;
+				break;
+				case TOUCH:
+				  A0 = A;
+				  STATE = MEASURE;
+				break;
+				case MEASURE:
+				  F1 = F;//измерение
+				  A1 = A;
+				  STATE = REMOVAL;
+				break;
+				case REMOVAL:
+				  H = A;
+
+				  T14math(&E, &ST, &SB, &HB, F1, A0, A1, H);
+				  STATE = RESULTS;
+				break;
+				case RESULTS:
+					//clear
+				  STATE = TOUCH;
+				break;
+			  }
+
+				SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
+				Ft_Gpu_Hal_Sleep(5);
+				flag = 1;
+			break;
+			case 3:
+				STATE = IDLE;
+				SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
+				flag = 0;
+			break;
+			case 4:
+				switch (SCREEN){
+					case MAIN:
+					break;
+					case SETTINGS:
+						SCREEN = MATERIAL;
+						dloffset = API_Screen_BasicScreen(phost, SCREEN);
+					break;
+					case MATERIAL:
+					break;
+					case CALIBRATION:
+					break;
+				}
+			break;
+			case 5:
+				switch (SCREEN){
+					case MAIN:
+					break;
+					case SETTINGS:
+						SCREEN = CALIBRATION;
+						dloffset = API_Screen_BasicScreen(phost, SCREEN);
+					break;
+					case MATERIAL:
+					break;
+					case CALIBRATION:
+					break;
+				}
+			break;
+			case 201:
+			case 202:
+			case 203:
+				//** FLASHStatus = FLASH_Write_DataWord(0, tag);
+				//ft_uint32_t storedValue = FLASH_Read_DataWord(0);
+			break;
+		  }
+
+		  while (tag != 0){
+			  tag = Ft_Gpu_Hal_Rd8(phost,REG_TOUCH_TAG);
+		  }
+
+	  } else {
+		  SAMAPP_API_Screen_Content(phost, SCREEN, STATE, tag, dloffset, F, A, A0, H, F1, A1, E, HB, ST, SB, init_finished);
+		  tag = Ft_Gpu_Hal_Rd8(phost,REG_TOUCH_TAG);
+		  Ft_Gpu_Hal_Sleep(5);
+	  }
+
+//	if (USB_Device_dev.dev.device_status == USB_CONFIGURED) {
+//	  USB_Send_DataPair(&USB_Device_dev, STATE, F, A);
+//	  //USB_Send_State(&USB_Device_dev, STATE);
+//	}
 
 	  if (flag != 0)
 	  	  init_finished++;
-
-	  //SAMAPP_API_Screen_Content(phost, dloffset, init_finished);
 
 	}
   // Infinite loop, never return.
@@ -290,8 +288,10 @@ void TIM2_IRQHandler (void)
   // Clear update interrupt bit
   TIM_ClearITPendingBit(TIM2,TIM_FLAG_Update);
 
-////////  float adc_value_f = get_adc_value();
+////////   float adc_value_f = get_adc_value();
 ////////  F = F1K * adc_value_f + F1B;
+
+//  while(!DMA_GetFlagStatus(DMA1_FLAG_TC1));
 
     int mean = 0;
   	for (int i = 0 ; i < DMA_BUFFER_SIZE; i++){
@@ -299,9 +299,10 @@ void TIM2_IRQHandler (void)
   	}
   	F = mean / DMA_BUFFER_SIZE;
 
-  	Dacc = Dacc + F - Dout;
-  	Dout = Dacc/(uint16_t)K;
-  	F = Dout;
+//  	Dacc = Dacc + F - Dout;
+//  	Dout = Dacc/(uint16_t)K;
+//  	F = Dout;
+
 //	int sum = 0;
 //	int cnt = 0;
 //	for (int i =0 ; i < DMA_BUFFER_SIZE; i++){
@@ -316,8 +317,10 @@ void TIM2_IRQHandler (void)
 	//F = sum * (ADC_VOLTS / ADC_MAX_BITS);
 //	F = sum;
 
-//**  	F = F1K * F + F1B;
-	DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
+  	F = F1K * F + F1B;
+	//DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
+//	DMA_ClearFlag(DMA1_FLAG_TC1);
+
 	//DMA_Cmd(DMA1_Channel1, ENABLE);
 
 	//костыль
@@ -338,10 +341,22 @@ void TIM2_IRQHandler (void)
 void DMA1_Channel1_IRQHandler(void)
 {
 
-   DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, DISABLE);
-   //DMA_Cmd(DMA1_Channel1, DISABLE);
+	//DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, DISABLE);
+	//DMA_Cmd(DMA1_Channel1, DISABLE);
+
+	if (DMA_GetITStatus(DMA1_IT_HT1))   {
+		DMA_ClearITPendingBit(DMA1_IT_HT1);
+	}
+	if (DMA_GetITStatus(DMA1_IT_TC1))   {
+		DMA_ClearITPendingBit(DMA1_IT_TC1);
+	}
 
 
 }
+
+
+
+
+
 
 // ----------------------------------------------------------------------------

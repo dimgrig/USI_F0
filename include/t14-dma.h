@@ -8,7 +8,7 @@
 #ifndef T14_DMA_H_
 #define T14_DMA_H_
 
-#define DMA_BUFFER_SIZE 32
+#define DMA_BUFFER_SIZE 64
 
 #include "stm32f0xx.h"
 
