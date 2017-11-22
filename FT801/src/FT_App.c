@@ -497,7 +497,7 @@ ft_void_t SAMAPP_API_Screen_Content(Ft_Gpu_Hal_Context_t *phost,
 		break;
 		case MATERIAL:
 
-			storedMaterial = FLASH_Read_DataWord(0);
+			//storedMaterial = FLASH_Read_DataWord(0);
 
 			Ft_App_WrCoCmd_Buffer(phost,COLOR_RGB(0xff,0xd8,0x00));
 
