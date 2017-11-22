@@ -8,223 +8,164 @@
 #include "t14-usb.h"
 #include "GUI.h"
 
-
-// ******************************
-//       RCC Initialization
-// ******************************
-void RCC_Initializatiion(void)
-{
-	/* Start HSI and connect SysClk to HSI. HSI = 8 MHz */ //16
-	RCC_DeInit(); //reset all rcc settings
-	//RCC_HSICmd(ENABLE);
-	while (RCC_GetFlagStatus(RCC_FLAG_HSIRDY) == RESET);
-	RCC_HSEConfig(RCC_HSE_ON); //hse on
-	ErrorStatus HSEStartUpStatus = RCC_WaitForHSEStartUp();
-	RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE); //HSE like system clk source
-
-	//RCC_SYSCLKConfig(RCC_SYSCLKSource_HSI);
-//	while (RCC_GetSYSCLKSource() != 0x04);
-	/* PLL Config */
-	//** RCC_PLLConfig(RCC_PLLSource_HSI, RCC_PLLMul_6, RCC_PLLDiv_4);
-//	RCC_PLLConfig(RCC_PLLSource_HSI, RCC_PLLMul_6);
-
-	if (HSEStartUpStatus == 1)
-	    {
-	        /* HCLK = SYSCLK */
-	        RCC_HCLKConfig(RCC_SYSCLK_Div1);
-
-//	        /* PCLK2 = HCLK*/
-//	        RCC_PCLK2Config(RCC_HCLK_Div1);
 //
-//	        /* PCLK1 = HCLK*/
-//	        RCC_PCLK1Config(RCC_HCLK_Div1);
-
-
-	        /* PLLCLK = 8MHz * 6 = 48 MHz */
-	        RCC_PLLConfig(RCC_PLLSource_PREDIV1, RCC_PLLMul_6);
-
-
-
-	        /* Enable PLL */
-	        RCC_PLLCmd(ENABLE);
-
-	        /* Wait till PLL is ready */
-	        while (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET) {}
-
-	        /* Select PLL as system clock source */
-	        RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
-
-	        /* Wait till PLL is used as system clock source */
-	        while (RCC_GetSYSCLKSource() != 0x08) {}
-	    }
-
-
-//	RCC_PLLCmd(ENABLE);
-//	while (RCC_GetFlagStatus( RCC_FLAG_PLLRDY ) == RESET);
-//	/* Enable Clock to GPIO A (USB is connected here)*/
-//	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE) ;
-//	/* USB clock enable */
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USB, ENABLE);
-//	/* Enable clock to SYSCFG */
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-}
-
-/* #### USB Low  Priority ISR ###### */
-void USB_LP_IRQHandler (void)
-{
-	USB_Istr();
-}
-
-
-void USB_Send_Packet(USB_CORE_HANDLE *pdev, uint8_t *packet, uint16_t length)
-{
-	USB_Send_Data(pdev, 0x02);
-	//USB_Send_Data(0x11);
-	//USB_Send_Data(0x15);
-	uint8_t CRC_ = 0;
-	uint8_t TempChar = 0;
-	// uint8_t test_pack[3] = {0x31, 0x32, 0x37};
-	for (int i = 0; i < length; i++){
-		TempChar = *packet++;
-		//TempChar = test_pack[i];
-		CRC_ += TempChar;
-		USB_Send_Data(pdev, TempChar);
-
-	}
-	USB_Send_Data(pdev, hextoascii((CRC_ >> 4)&0x0F) );
-	USB_Send_Data(pdev, hextoascii((CRC_ >> 0)&0x0F) );
-
-	USB_Send_Data(pdev, 0x03);
-	USB_Send_Data(pdev, 0x0A);
-}
-
-void USB_Send_State(USB_CORE_HANDLE *pdev, State_TypeDef STATE){
-	uint8_t arr[1] = {(uint8_t)STATE};
-	USB_Send_Packet(pdev, arr, 1);
-}
-
-void USB_Send_DataPair(USB_CORE_HANDLE *pdev, State_TypeDef STATE, double F, double A){
-	uint8_t length = 0;
-	uint8_t l = 0;
-	uint8_t arr[50];
-	arr[length] = (uint8_t)STATE;
-	length++;
-
-	uint8_t value_c_length = 10;
-	char value_c[value_c_length];
-
-	uint32_t F_dec = (uint32_t)F;
-	uint32_t F_fr = (uint32_t)( ( F - floor(F) ) * pow(10, 1) );
-
-	if (F_dec == 0){
-		arr[length] = hextoascii(0);
-		length++;
-	} else {
-		l=0;
-		while(F_dec != 0)
-		{
-			value_c[l] = hextoascii(F_dec%10);
-			F_dec /= 10;// n = n/10
-			l++;
-		}
-
-		for (int i = 0; i < l; i++){
-			arr[length] = value_c[l-i-1];
-			length++;
-		}
-	}
-	//sprintf(value_c, "%d", F_dec);
-
-//	for (int i = 0; i < l; i++){
-//		arr[i+length] = value_c[i];
+//
+///* #### USB Low  Priority ISR ###### */
+//void USB_LP_IRQHandler (void)
+//{
+//	USB_Istr();
+//}
+//
+//
+//void USB_Send_Packet(USB_CORE_HANDLE *pdev, uint8_t *packet, uint16_t length)
+//{
+//	USB_Send_Data(pdev, 0x02);
+//	//USB_Send_Data(0x11);
+//	//USB_Send_Data(0x15);
+//	uint8_t CRC_ = 0;
+//	uint8_t TempChar = 0;
+//	// uint8_t test_pack[3] = {0x31, 0x32, 0x37};
+//	for (int i = 0; i < length; i++){
+//		TempChar = *packet++;
+//		//TempChar = test_pack[i];
+//		CRC_ += TempChar;
+//		USB_Send_Data(pdev, TempChar);
+//
+//	}
+//	USB_Send_Data(pdev, hextoascii((CRC_ >> 4)&0x0F) );
+//	USB_Send_Data(pdev, hextoascii((CRC_ >> 0)&0x0F) );
+//
+//	USB_Send_Data(pdev, 0x03);
+//	USB_Send_Data(pdev, 0x0A);
+//}
+//
+//void USB_Send_State(USB_CORE_HANDLE *pdev, State_TypeDef STATE){
+//	uint8_t arr[1] = {(uint8_t)STATE};
+//	USB_Send_Packet(pdev, arr, 1);
+//}
+//
+//void USB_Send_DataPair(USB_CORE_HANDLE *pdev, State_TypeDef STATE, double F, double A){
+//	uint8_t length = 0;
+//	uint8_t l = 0;
+//	uint8_t arr[50];
+//	arr[length] = (uint8_t)STATE;
+//	length++;
+//
+//	uint8_t value_c_length = 10;
+//	char value_c[value_c_length];
+//
+//	uint32_t F_dec = (uint32_t)F;
+//	uint32_t F_fr = (uint32_t)( ( F - floor(F) ) * pow(10, 1) );
+//
+//	if (F_dec == 0){
+//		arr[length] = hextoascii(0);
 //		length++;
+//	} else {
+//		l=0;
+//		while(F_dec != 0)
+//		{
+//			value_c[l] = hextoascii(F_dec%10);
+//			F_dec /= 10;// n = n/10
+//			l++;
+//		}
+//
+//		for (int i = 0; i < l; i++){
+//			arr[length] = value_c[l-i-1];
+//			length++;
+//		}
 //	}
-
-	arr[length] = 0x2E;
-	length++;
-
-//	l=0;
-//	while(F_fr != 0)
-//	{
-//		F_fr /= 10;// n = n/10
-//		++l;
-//	}
-//	sprintf(value_c, "%d", F_fr);
-//	for (int i = 0; i < l; i++){
-//		arr[i+length] = value_c[i];
+//	//sprintf(value_c, "%d", F_dec);
+//
+////	for (int i = 0; i < l; i++){
+////		arr[i+length] = value_c[i];
+////		length++;
+////	}
+//
+//	arr[length] = 0x2E;
+//	length++;
+//
+////	l=0;
+////	while(F_fr != 0)
+////	{
+////		F_fr /= 10;// n = n/10
+////		++l;
+////	}
+////	sprintf(value_c, "%d", F_fr);
+////	for (int i = 0; i < l; i++){
+////		arr[i+length] = value_c[i];
+////		length++;
+////	}
+//
+//	if (F_fr == 0){
+//		arr[length] = hextoascii(0);
 //		length++;
+//	} else {
+//		l=0;
+//		while(F_fr != 0)
+//		{
+//			value_c[l] = hextoascii(F_fr%10);
+//			F_fr /= 10;// n = n/10
+//			l++;
+//		}
+//
+//		for (int i = 0; i < l; i++){
+//			arr[length] = value_c[l-i-1];
+//			length++;
+//		}
 //	}
-
-	if (F_fr == 0){
-		arr[length] = hextoascii(0);
-		length++;
-	} else {
-		l=0;
-		while(F_fr != 0)
-		{
-			value_c[l] = hextoascii(F_fr%10);
-			F_fr /= 10;// n = n/10
-			l++;
-		}
-
-		for (int i = 0; i < l; i++){
-			arr[length] = value_c[l-i-1];
-			length++;
-		}
-	}
-
-	arr[length] = 0x3B;
-	length++;
-
-
-
-	uint32_t A_dec = (uint32_t)A;
-	uint32_t A_fr = (uint32_t)( ( A - floor(A) ) * pow(10, 3) );
-
-	if (A_dec == 0){
-		arr[length] = hextoascii(0);
-		length++;
-	} else {
-		l=0;
-		while(A_dec != 0)
-		{
-			value_c[l] = hextoascii(A_dec%10);
-			A_dec /= 10;// n = n/10
-			l++;
-		}
-
-		for (int i = 0; i < l; i++){
-			arr[length] = value_c[l-i-1];
-			length++;
-		}
-	}
-
-	arr[length] = 0x2E;
-	length++;
-
-	if (A_fr == 0){
-		arr[length] = hextoascii(0);
-		length++;
-	} else {
-		l=0;
-		while(A_fr != 0)
-		{
-			value_c[l] = hextoascii(A_fr%10);
-			A_fr /= 10;// n = n/10
-			l++;
-		}
-
-		for (int i = 0; i < l; i++){
-			arr[length] = value_c[l-i-1];
-			length++;
-		}
-	}
-
-
-	//sprintf(value_c, "%d.%d", (int)A, (int)( ( A - floor(A) ) * pow(10, 3) ));
-
-	USB_Send_Packet(pdev, arr, length);
-}
+//
+//	arr[length] = 0x3B;
+//	length++;
+//
+//
+//
+//	uint32_t A_dec = (uint32_t)A;
+//	uint32_t A_fr = (uint32_t)( ( A - floor(A) ) * pow(10, 3) );
+//
+//	if (A_dec == 0){
+//		arr[length] = hextoascii(0);
+//		length++;
+//	} else {
+//		l=0;
+//		while(A_dec != 0)
+//		{
+//			value_c[l] = hextoascii(A_dec%10);
+//			A_dec /= 10;// n = n/10
+//			l++;
+//		}
+//
+//		for (int i = 0; i < l; i++){
+//			arr[length] = value_c[l-i-1];
+//			length++;
+//		}
+//	}
+//
+//	arr[length] = 0x2E;
+//	length++;
+//
+//	if (A_fr == 0){
+//		arr[length] = hextoascii(0);
+//		length++;
+//	} else {
+//		l=0;
+//		while(A_fr != 0)
+//		{
+//			value_c[l] = hextoascii(A_fr%10);
+//			A_fr /= 10;// n = n/10
+//			l++;
+//		}
+//
+//		for (int i = 0; i < l; i++){
+//			arr[length] = value_c[l-i-1];
+//			length++;
+//		}
+//	}
+//
+//
+//	//sprintf(value_c, "%d.%d", (int)A, (int)( ( A - floor(A) ) * pow(10, 3) ));
+//
+//	USB_Send_Packet(pdev, arr, length);
+//}
 
 uint8_t hextoascii(uint8_t hex)
 { uint8_t ascii;
@@ -277,10 +218,10 @@ uint8_t asciitohex(uint8_t ascii)
   return (hex);
 }
 
-
-void USB_Send_Data(USB_CORE_HANDLE *pdev, uint8_t data){
-	USBD_CtlSendData(pdev, data, 1);
-}
+//
+//void USB_Send_Data(USB_CORE_HANDLE *pdev, uint8_t data){
+//	USBD_CtlSendData(pdev, data, 1);
+//}
 
 /* if any data received from PC */
 //    if (USB_Data_Received_Flag != 0)

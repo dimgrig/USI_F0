@@ -1,4 +1,4 @@
-#include <stdio.h>
+//#include <stdio.h>
 #include "stm32f0xx.h"
 
 #define ADC_VOLTS 3.3

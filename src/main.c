@@ -1,18 +1,13 @@
 // ----------------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+//#include <stdlib.h>
+//#include <stdio.h>
+//#include <stdint.h>
 
 #include "stm32f0xx.h"
-//#include "diag/Trace.h"
-
-//#include "Timer.h"
-//#include "BlinkLed.h"
 
 #include "t14-spi.h"
 #include "t14-math.h"
-
 #include "t14-timer.h"
 #include "t14-adc.h"
 #include "t14-dma.h"
@@ -22,9 +17,10 @@
 
 #include "t14-usb.h"
 
+
+
 #include "FT_Platform.h"
 #include "SampleApp.h"
-
 
 #define SPS 5000
 #define Trc 0.001f
@@ -41,8 +37,6 @@ ft_uint16_t dloffset;
 State_TypeDef STATE = IDLE;
 //uint16_t TouchDelay = 0;
 
-
-USB_CORE_HANDLE  USB_Device_dev ;
 
 double F = 0; //текущие
 double A = 0;
@@ -102,12 +96,14 @@ void main(int argc, char* argv[])
 
 	InitSSI();
 
+
+
 	/* rcc init end */
 	/* usb init start*/
 	//Set_System();
 
 //	RCC_Initializatiion();
-	USBD_Init(&USB_Device_dev, &USR_desc, &USBD_CDC_cb, &USR_cb);
+//	USBD_Init(&USB_Device_dev, &USR_desc, &USBD_CDC_cb, &USR_cb);
 
 //**	RCC_Initializatiion();
 //**	SYSCFG_USBPuCmd( ENABLE );
@@ -270,10 +266,10 @@ void main(int argc, char* argv[])
 	  }
 
 
-	if (USB_Device_dev.dev.device_status == USB_CONFIGURED) {
-	  USB_Send_DataPair(&USB_Device_dev, STATE, F, A);
-	  //USB_Send_State(&USB_Device_dev, STATE);
-	}
+//	if (USB_Device_dev.dev.device_status == USB_CONFIGURED) {
+//	  USB_Send_DataPair(&USB_Device_dev, STATE, F, A);
+//	  //USB_Send_State(&USB_Device_dev, STATE);
+//	}
 
 
 	  if (flag != 0)
